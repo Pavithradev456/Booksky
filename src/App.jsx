@@ -12,19 +12,27 @@ import BookModal from './components/BookModal';
 import ReadOverlay from './components/ReadOverlay';
 import Auth from './pages/Auth';
 import About from './pages/About';
+import FAQ from './pages/FAQ';
+import Pricing from './pages/Pricing';
 import { AnimatePresence } from 'framer-motion';
+
+import { DUMMY_BOOKS } from './data/dummyContent';
 
 function App() {
   const [books, setBooks] = useState(() => {
     const saved = localStorage.getItem('booksky_books_react');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : DUMMY_BOOKS;
   });
 
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('booksky_theme') || 'dark';
+    const saved = localStorage.getItem('theme');
+    return saved || 'light';
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('All Categories');
+  const [filterLanguage, setFilterLanguage] = useState('All Languages');
+  const [sortBy, setSortBy] = useState('Newest');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReadOpen, setIsReadOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
@@ -98,6 +106,12 @@ function App() {
     document.body.style.overflow = 'auto';
   };
 
+  const handleRestoreLibrary = () => {
+    if (window.confirm('Restore default library with 30-50 page stories? This will reset your personal books.')) {
+      setBooks(DUMMY_BOOKS);
+    }
+  };
+
   const filteredBooks = books.filter(book =>
     book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     book.author.toLowerCase().includes(searchQuery.toLowerCase())
@@ -118,7 +132,14 @@ function App() {
       )}
 
       <div className={`main-content-wrapper ${hideLayout ? 'full-width' : ''}`}>
-        {!hideLayout && <Sidebar />}
+        {!hideLayout && (
+          <Sidebar
+            activeCategory={filterCategory}
+            setCategory={setFilterCategory}
+            activeLanguage={filterLanguage}
+            setLanguage={setFilterLanguage}
+          />
+        )}
 
         <main className="main-content">
           <Routes>
@@ -132,6 +153,11 @@ function App() {
                   onEdit={handleEditBook}
                   onDelete={handleDeleteBook}
                   onToggleFavorite={handleToggleFavorite}
+                  activeCategory={filterCategory}
+                  activeLanguage={filterLanguage}
+                  sortBy={sortBy}
+                  setSortBy={setSortBy}
+                  onRestore={handleRestoreLibrary}
                 />
               }
             />
@@ -150,6 +176,8 @@ function App() {
             <Route path="/drafts" element={<Drafts />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/about" element={<About />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/auth" element={<Auth setIsLoggedIn={setIsLoggedIn} />} />
           </Routes>
         </main>

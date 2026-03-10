@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const Sidebar = () => {
+const Sidebar = ({ activeCategory, setCategory, activeLanguage, setLanguage }) => {
     const categories = ['All Categories', 'Art', 'Biography', 'Business', 'Comics', 'Education', 'Fiction', 'History'];
     const languages = ['All Languages', 'English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese'];
 
@@ -14,8 +14,12 @@ const Sidebar = () => {
             <div className="sidebar-section">
                 <h4 className="sidebar-title">Categories</h4>
                 <ul className="filter-list">
-                    {categories.map((cat, i) => (
-                        <li key={i} className={`filter-item ${i === 0 ? 'active' : ''}`}>
+                    {categories.map((cat) => (
+                        <li
+                            key={cat}
+                            className={`filter-item ${activeCategory === cat ? 'active' : ''}`}
+                            onClick={() => setCategory(cat)}
+                        >
                             {cat}
                         </li>
                     ))}
@@ -25,8 +29,12 @@ const Sidebar = () => {
             <div className="sidebar-section">
                 <h4 className="sidebar-title">Languages</h4>
                 <ul className="filter-list">
-                    {languages.map((lang, i) => (
-                        <li key={i} className={`filter-item ${i === 0 ? 'active' : ''}`}>
+                    {languages.map((lang) => (
+                        <li
+                            key={lang}
+                            className={`filter-item ${activeLanguage === lang ? 'active' : ''}`}
+                            onClick={() => setLanguage(lang)}
+                        >
                             {lang}
                         </li>
                     ))}
@@ -34,8 +42,8 @@ const Sidebar = () => {
             </div>
 
             <div className="sidebar-section">
-                <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: '12px', color: '#1d4ed8', fontSize: '0.85rem' }}>
-                    <strong>Tip:</strong> You can now add 3D book covers to your library!
+                <div className="premium-tip">
+                    <strong>Tip:</strong> Each category now has 30-50 page stories for you to explore!
                 </div>
             </div>
         </motion.aside>

@@ -2,27 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BookCard from '../components/BookCard';
 
-const Library = ({ books, onRead, onEdit, onDelete, onToggleFavorite }) => {
+const Library = ({ books, onRead, onEdit, onDelete, onToggleFavorite, activeCategory, activeLanguage, sortBy, setSortBy, onRestore }) => {
     const [featuredBooks, setFeaturedBooks] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [viewMode, setViewMode] = useState('grid');
 
     useEffect(() => {
         const fetchFeaturedBooks = async () => {
+            setIsLoading(true);
             try {
-                const response = await fetch('https://openlibrary.org/subjects/fiction.json?limit=6');
+                // Map local category names to Open Library subjects
+                const categoryToSubject = {
+                    'All Categories': 'fiction',
+                    'Art': 'art',
+                    'Biography': 'biography',
+                    'Business': 'business',
+                    'Comics': 'comics',
+                    'Education': 'education',
+                    'Fiction': 'fiction',
+                    'History': 'history'
+                };
+
+                const subject = categoryToSubject[activeCategory] || 'fiction';
+                const response = await fetch(`https://openlibrary.org/subjects/${subject}.json?limit=8`);
                 const data = await response.json();
 
-                const mappedBooks = data.works.map(work => ({
-                    id: `ol-${work.key.split('/').pop()}`,
-                    title: work.title,
-                    author: work.authors?.[0]?.name || 'Unknown Author',
-                    description: work.first_publish_year ? `First published in ${work.first_publish_year}.` : 'A classic piece of fiction from the Open Library collection.',
-                    externalUrl: `https://openlibrary.org${work.key}`,
-                    isFavorite: false,
-                    isExternal: true // Flag to identify API books
-                }));
-
-                setFeaturedBooks(mappedBooks);
+                if (data.works) {
+                    const mappedBooks = data.works.map(work => ({
+                        id: `ol-${work.key.split('/').pop()}`,
+                        title: work.title,
+                        author: work.authors?.[0]?.name || 'Unknown Author',
+                        category: activeCategory === 'All Categories' ? 'Fiction' : activeCategory,
+                        language: 'English',
+                        description: work.first_publish_year ? `First published in ${work.first_publish_year}.` : 'A trending discovery from the Open Library collection.',
+                        coverImage: work.cover_id ? `https://covers.openlibrary.org/b/id/${work.cover_id}-L.jpg` : null,
+                        externalUrl: `https://openlibrary.org${work.key}`,
+                        isFavorite: false,
+                        isExternal: true
+                    }));
+                    setFeaturedBooks(mappedBooks);
+                }
             } catch (error) {
                 console.error('Error fetching books:', error);
             } finally {
@@ -31,26 +50,59 @@ const Library = ({ books, onRead, onEdit, onDelete, onToggleFavorite }) => {
         };
 
         fetchFeaturedBooks();
-    }, []);
+    }, [activeCategory]);
+
+    // Core Filtering Logic
+    const processedBooks = books.filter(book => {
+        const catMatch = activeCategory === 'All Categories' || book.category === activeCategory;
+        const langMatch = activeLanguage === 'All Languages' || book.language === activeLanguage;
+        return catMatch && langMatch;
+    }).sort((a, b) => {
+        if (sortBy === 'Newest') return new Date(b.dateAdded) - new Date(a.dateAdded);
+        if (sortBy === 'Title') return a.title.localeCompare(b.title);
+        if (sortBy === 'Author') return a.author.localeCompare(b.author);
+        return 0;
+    });
 
     return (
         <div className="page-view">
             <header className="featured-header">
                 <div>
-                    <h2>Your Collection</h2>
+                    <h2>{activeCategory === 'All Categories' ? 'Your Collection' : activeCategory}</h2>
                     <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-                        Books you've created and added to your personal library.
+                        Showing {processedBooks.length} {activeLanguage !== 'All Languages' ? activeLanguage : ''} books in your library.
                     </p>
                 </div>
                 <div className="featured-actions">
-                    <button className="btn btn-outline" style={{ marginRight: '0.5rem' }}>View Grid</button>
-                    <button className="btn btn-outline">Sort By</button>
+                    <button
+                        className="btn btn-outline"
+                        onClick={onRestore}
+                        style={{ marginRight: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }}
+                    >
+                        🔄 Restore Masterpieces
+                    </button>
+                    <button
+                        className={`btn btn-outline ${viewMode === 'list' ? 'active' : ''}`}
+                        onClick={() => setViewMode(prev => prev === 'grid' ? 'list' : 'grid')}
+                        style={{ marginRight: '0.5rem' }}
+                    >
+                        {viewMode === 'grid' ? 'View List' : 'View Grid'}
+                    </button>
+                    <select
+                        className="sort-select"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                    >
+                        <option value="Newest">Newest</option>
+                        <option value="Title">Title</option>
+                        <option value="Author">Author</option>
+                    </select>
                 </div>
             </header>
 
-            <div className="book-grid">
+            <div className={`book-grid ${viewMode === 'list' ? 'list-view' : ''}`}>
                 <AnimatePresence mode="popLayout">
-                    {books.length === 0 ? (
+                    {processedBooks.length === 0 ? (
                         <motion.div
                             key="empty"
                             className="empty-state"
@@ -60,11 +112,11 @@ const Library = ({ books, onRead, onEdit, onDelete, onToggleFavorite }) => {
                             style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem' }}
                         >
                             <div className="empty-icon" style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📚</div>
-                            <h3>No personal books yet.</h3>
-                            <p style={{ color: 'var(--text-dim)' }}>Start by clicking "+ Add Book" in the header!</p>
+                            <h3>No books found matching filters.</h3>
+                            <p style={{ color: 'var(--text-dim)' }}>Try changing your category or language selection!</p>
                         </motion.div>
                     ) : (
-                        books.map(book => (
+                        processedBooks.map(book => (
                             <BookCard
                                 key={book.id}
                                 book={book}

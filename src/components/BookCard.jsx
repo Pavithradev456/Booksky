@@ -29,14 +29,26 @@ const BookCard = ({ book, onRead, onEdit, onDelete, onToggleFavorite }) => {
                 transition={{ duration: 0.5 }}
             >
                 <div className="book-spine"></div>
-                <div className="book-cover" style={{ background: getGradient(book.id) }}>
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', lineHeight: '1.2' }}>{book.title}</h3>
-                        <p style={{ fontSize: '0.8rem', opacity: 0.9 }}>{book.author}</p>
-                    </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: 'auto' }}>
-                        {book.description.substring(0, 60)}...
-                    </div>
+                <div
+                    className="book-cover"
+                    style={{
+                        background: (book.coverImage || (book.isExternal ? '/assets/covers/discovery_fallback.png' : getGradient(book.id))) ? `url(${book.coverImage || '/assets/covers/discovery_fallback.png'})` : getGradient(book.id),
+                        backgroundSize: 'cover',
+                        backgroundPosition: book.id.startsWith('seed-') ? 'right center' : 'center',
+                        backgroundRepeat: 'no-repeat'
+                    }}
+                >
+                    {!(book.coverImage || (book.isExternal && '/assets/covers/discovery_fallback.png')) && (
+                        <>
+                            <div style={{ flex: 1 }}>
+                                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', lineHeight: '1.2' }}>{book.title}</h3>
+                                <p style={{ fontSize: '0.8rem', opacity: 0.9 }}>{book.author}</p>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: 'auto' }}>
+                                {book.description.substring(0, 60)}...
+                            </div>
+                        </>
+                    )}
                 </div>
                 <div className="book-pages"></div>
 
@@ -49,22 +61,16 @@ const BookCard = ({ book, onRead, onEdit, onDelete, onToggleFavorite }) => {
                             <button className="action-dot" onClick={() => onEdit(book)} title="Edit">
                                 ✏️
                             </button>
-                            <button className="action-dot" onClick={() => onDelete(book.id)} style={{ color: '#ef4444' }} title="Delete">
+                            <button className="action-dot delete" onClick={() => onDelete(book.id)} title="Delete">
                                 🗑️
                             </button>
                         </>
                     )}
-                    {book.isExternal && (
-                        <button className="action-dot" onClick={() => onRead(book)} title="Read Details">
-                            📖
-                        </button>
-                    )}
                 </div>
             </motion.div>
-
-            <div className="book-info">
-                <h3>{book.title}</h3>
-                <p className="author">By {book.author}</p>
+            <div className="book-info-minimal">
+                <h4>{book.title}</h4>
+                <p>By {book.author}</p>
             </div>
         </div>
     );
